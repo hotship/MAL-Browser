@@ -23,6 +23,7 @@ import com.shixu.minibrowser.data.BrowserDatabase
 import com.shixu.minibrowser.data.SavedWebsite
 import com.shixu.minibrowser.databinding.ActivitySiteTestBinding
 import com.shixu.minibrowser.web.NativeWebBridge
+import com.shixu.minibrowser.web.SiteIdentityHelper
 import com.shixu.minibrowser.web.UrlTools
 import java.io.File
 import java.io.FileOutputStream
@@ -112,7 +113,8 @@ class SiteTestActivity : AppCompatActivity() {
                 if (lastTitle.isBlank()) lastTitle = host.ifBlank { "网页" }
                 if (binding.siteNameInput.text.isNullOrBlank()) binding.siteNameInput.setText(lastTitle)
                 binding.siteTitle.text = lastTitle
-                binding.statusText.text = "测试完成 · $host · 已自动获取网页名称${if (lastIcon != null) "和图标" else ""}"
+                binding.statusText.text = "已识别网页 · $host · 正在校正名称和图标"
+                resolveTestedSiteIdentity(view, url)
                 binding.saveButton.isEnabled = testedUrl != null
                 binding.saveButton.alpha = if (binding.saveButton.isEnabled) 1f else 0.45f
             }
@@ -178,8 +180,8 @@ class SiteTestActivity : AppCompatActivity() {
         lastIcon = null
         customIcon = null
         testedUrl = null
-        binding.siteTitle.text = "正在读取网页…"
-        binding.statusText.text = "正在测试连接、网页名称和图标"
+        binding.siteTitle.text = "正在识别网页…"
+        binding.statusText.text = "正在识别网页名称和图标"
         binding.siteNameInput.setText("")
         binding.faviconView.setImageResource(R.mipmap.ic_launcher)
         binding.editIconPreview.setImageResource(R.mipmap.ic_launcher)
@@ -192,7 +194,7 @@ class SiteTestActivity : AppCompatActivity() {
         val url = testedUrl ?: return
         val finalTitle = binding.siteNameInput.text?.toString()?.trim().orEmpty()
             .ifBlank { lastTitle.ifBlank { Uri.parse(url).host.orEmpty().ifBlank { "网页" } } }
-        val iconPath = saveIcon(customIcon ?: lastIcon)
+        val iconPath = saveIcon(customIcon ?: lastIcon ?: SiteIdentityHelper.createFallbackIcon(this, finalTitle, url))
         database.upsertWebsite(
             SavedWebsite(
                 title = finalTitle,
@@ -203,8 +205,40 @@ class SiteTestActivity : AppCompatActivity() {
                 lastOpenedAt = 0
             )
         )
-        Toast.makeText(this, "已添加到首页 · $selectedCategory", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "已保存到首页 · $selectedCategory", Toast.LENGTH_SHORT).show()
         finish()
+    }
+
+    private fun resolveTestedSiteIdentity(view: WebView, url: String) {
+        SiteIdentityHelper.requestPageMeta(view, url) { meta ->
+            val betterTitle = meta.bestTitle.ifBlank { SiteIdentityHelper.cleanDisplayName(lastTitle, url) }
+            if (betterTitle.isNotBlank()) {
+                lastTitle = betterTitle
+                binding.siteTitle.text = betterTitle
+                val currentInput = binding.siteNameInput.text?.toString().orEmpty().trim()
+                if (currentInput.isBlank() || currentInput == testedUrl || currentInput == runCatching { Uri.parse(url).host.orEmpty() }.getOrDefault("")) {
+                    binding.siteNameInput.setText(betterTitle)
+                }
+            }
+            if (customIcon == null && lastIcon == null) {
+                meta.iconUrl?.let { iconUrl ->
+                    SiteIdentityHelper.fetchBitmapAsync(iconUrl) { bitmap ->
+                        if (bitmap != null && customIcon == null) {
+                            lastIcon = bitmap
+                            binding.faviconView.setImageBitmap(bitmap)
+                            binding.editIconPreview.setImageBitmap(bitmap)
+                            binding.statusText.text = "已识别完成 · 已校正网页名称和图标"
+                        } else {
+                            binding.statusText.text = "已识别完成 · 已校正网页名称"
+                        }
+                    }
+                } ?: run {
+                    binding.statusText.text = "已识别完成 · 已校正网页名称"
+                }
+            } else {
+                binding.statusText.text = "已识别完成 · 已校正网页名称和图标"
+            }
+        }
     }
 
     private fun saveIcon(bitmap: Bitmap?): String? {

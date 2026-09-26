@@ -22,8 +22,8 @@ android {
         applicationId = "com.shixu.minibrowser"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "2.2.1"
+        versionCode = 7
+        versionName = "2.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

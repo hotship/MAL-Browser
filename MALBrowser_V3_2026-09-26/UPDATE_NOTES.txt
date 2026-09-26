@@ -1,31 +1,6 @@
-MAL Browser V4.2 / 2.2.1 UI update (2026-09-26)
-
-- Browser page now keeps only one compact top control bar; the previous full bottom toolbar has been removed.
-- Back remains directly available; home/forward/refresh/add-to-desktop/save/test/settings are consolidated in the top-right menu.
-- Removed the home-page “添加网页更顺手了 / 测试台” promotional card.
-- Saved websites on the home page now use a 4-column grid.
-- Website cards show only icon + name; URL/domain text is no longer displayed.
-- Version bumped to versionCode 5 / versionName 2.2.1 for GitHub Release auto-update detection.
-
-MAL 浏览器 V3（2026-09-26）本次调整
-
-1. 首页改为更偏韩系、浅米白、轻盈卡片风。
-2. 网站图标缩小，首页改成更紧凑的三列网页卡片。
-3. 首页搜索栏右侧新增“＋”按钮，点击直接进入“添加网页 / 测试网页”流程。
-4. 测试页改为：输入网址 -> 测试 -> 自动读取网页标题和 favicon -> 可手动修改网页名称、分类，并支持从本地图片更换图标 -> 添加到首页。
-5. 设置页同步换成新的轻量风格文案。
-6. 版本号提升到 2.1.0（versionCode 3）。
-
-补充：
-- 之前给出的 .sha256 校验文件只是用来验证 ZIP 是否下载完整、文件有没有损坏；不是必须使用的安装文件。
-
-云端更新版（2.2.0 / versionCode 4）
-- 固定 applicationId：com.shixu.minibrowser，避免破坏现有 App/WebView 数据归属。
-- compileSdk/targetSdk 调整为 36，避开 GitHub runner API 37 问题。
-- 新增 GitHub Releases 自动更新模块。
-- 设置页新增“检查更新”。
-- 启动后每 12 小时静默检查一次；仅发现新版本时弹窗。
-- 新增 update.json + versionCode 可靠版本判断。
-- 新增 APK 下载、Android 8+ 未知来源安装权限处理和 FileProvider 安装。
-- build.gradle.kts 支持从 GitHub Secrets 注入正式 release 签名。
-- 增加签名文件 .gitignore 保护。
+MAL Browser V4.4 / 2.4.0
+- “添加网页”流程改得更像正式 App：不再强调“测试台”，改成输入网址 → 识别预览 → 保存到首页。
+- 主页整体重做为更精致的卡片式布局，留白、图标区、分类区、网页区和底栏风格统一。
+- 主色调整为更干净的黑白灰极简风格，按钮、输入框、导航和卡片更统一。
+- 首页顶部加了更完整的引导区，快速打开和添加网页分开，交互更顺手。
+- 添加网页页文案从“测试”改成“识别 / 保存”，体验更像成品应用。

@@ -17,6 +17,9 @@ import java.io.File
 object ShortcutManagerHelper {
     const val ACTION_OPEN_SHORTCUT = "com.shixu.minibrowser.OPEN_SHORTCUT"
     const val EXTRA_SHORTCUT_ID = "shortcut_id"
+    const val EXTRA_SHORTCUT_URL = "shortcut_url"
+    const val EXTRA_SHORTCUT_TITLE = "shortcut_title"
+    const val EXTRA_SHORTCUT_ICON_PATH = "shortcut_icon_path"
 
     fun isPinSupported(context: Context): Boolean {
         val manager = context.getSystemService(ShortcutManager::class.java)
@@ -30,6 +33,9 @@ object ShortcutManagerHelper {
         val launchIntent = Intent(context, ShortcutActivity::class.java).apply {
             action = ACTION_OPEN_SHORTCUT
             putExtra(EXTRA_SHORTCUT_ID, shortcut.shortcutId)
+            putExtra(EXTRA_SHORTCUT_URL, shortcut.url)
+            putExtra(EXTRA_SHORTCUT_TITLE, shortcut.title)
+            putExtra(EXTRA_SHORTCUT_ICON_PATH, shortcut.iconPath)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
 
@@ -72,6 +78,9 @@ object ShortcutManagerHelper {
         val launchIntent = Intent(context, ShortcutActivity::class.java).apply {
             action = ACTION_OPEN_SHORTCUT
             putExtra(EXTRA_SHORTCUT_ID, shortcut.shortcutId)
+            putExtra(EXTRA_SHORTCUT_URL, shortcut.url)
+            putExtra(EXTRA_SHORTCUT_TITLE, shortcut.title)
+            putExtra(EXTRA_SHORTCUT_ICON_PATH, shortcut.iconPath)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
         val builder = ShortcutInfo.Builder(context, shortcut.shortcutId)

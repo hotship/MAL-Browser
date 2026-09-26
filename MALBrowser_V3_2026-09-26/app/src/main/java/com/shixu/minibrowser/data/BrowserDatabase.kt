@@ -179,6 +179,21 @@ class BrowserDatabase(context: Context) : SQLiteOpenHelper(
         return writableDatabase.insertWithOnConflict("saved_website", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
+    fun getWebsiteByUrl(url: String): SavedWebsite? {
+        readableDatabase.query(
+            "saved_website",
+            WEBSITE_COLUMNS,
+            "url = ?",
+            arrayOf(url),
+            null,
+            null,
+            null,
+            "1"
+        ).use { cursor ->
+            return if (cursor.moveToFirst()) cursor.toWebsite() else null
+        }
+    }
+
     fun getWebsites(category: String? = null): List<SavedWebsite> {
         val result = mutableListOf<SavedWebsite>()
         val selection = if (category.isNullOrBlank() || category == "全部") null else "category = ?"

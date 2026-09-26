@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#111111</color>
-    <color name="ink">#22201C</color>
+    <color name="ink">#17181C</color>
     <color name="white">#FFFFFF</color>
-    <color name="surface">#F8F5F1</color>
-    <color name="surface_2">#F2ECE5</color>
-    <color name="surface_3">#ECE5DD</color>
-    <color name="line">#E5DDD3</color>
-    <color name="muted">#8D8177</color>
-    <color name="soft_text">#A89B90</color>
+    <color name="surface">#F6F7FA</color>
+    <color name="surface_2">#EEF1F5</color>
+    <color name="surface_3">#E6EAF0</color>
+    <color name="line">#E3E7EE</color>
+    <color name="muted">#78808C</color>
+    <color name="soft_text">#A2A9B5</color>
     <color name="success">#4E8A5F</color>
-    <color name="accent">#B4A493</color>
+    <color name="accent">#8A92A0</color>
+    <color name="dialog_overlay">#66000000</color>
 </resources>

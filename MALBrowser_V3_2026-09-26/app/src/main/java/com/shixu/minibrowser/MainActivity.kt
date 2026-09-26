@@ -53,6 +53,7 @@ import com.shixu.minibrowser.service.KeepAliveService
 import com.shixu.minibrowser.shortcut.ShortcutManagerHelper
 import com.shixu.minibrowser.update.UpdateManager
 import com.shixu.minibrowser.web.NativeWebBridge
+import com.shixu.minibrowser.web.SiteIdentityHelper
 import com.shixu.minibrowser.web.UrlTools
 import org.json.JSONObject
 import java.io.File
@@ -322,6 +323,7 @@ open class MainActivity : AppCompatActivity() {
                     if (!shortcutMode) binding.urlInput.setText(url)
                     binding.pageDomain.text = Uri.parse(url).host.orEmpty()
                     if (lastPageTitle.isBlank()) binding.pageTitle.text = binding.pageDomain.text.ifBlank { "网页" }
+                    resolveVisiblePageIdentity(view, url)
                     notifyKeepAliveUrl(url)
                 }
                 updateNavButtons()
@@ -418,7 +420,29 @@ open class MainActivity : AppCompatActivity() {
                 binding.webView.loadUrl(shortcut.url)
                 return
             }
-            Toast.makeText(this, "这个桌面入口的本地记录已不存在。", Toast.LENGTH_LONG).show()
+            val fallbackUrl = intent.getStringExtra(ShortcutManagerHelper.EXTRA_SHORTCUT_URL)?.takeIf(UrlTools::isHttpOrHttps)
+            if (!fallbackUrl.isNullOrBlank()) {
+                val title = intent.getStringExtra(ShortcutManagerHelper.EXTRA_SHORTCUT_TITLE).orEmpty().ifBlank { "网页" }
+                val iconPath = intent.getStringExtra(ShortcutManagerHelper.EXTRA_SHORTCUT_ICON_PATH)
+                database.upsertShortcut(
+                    WebsiteShortcut(
+                        id = 0,
+                        shortcutId = shortcutId,
+                        title = title,
+                        url = fallbackUrl,
+                        iconPath = iconPath,
+                        displayMode = DISPLAY_FULLSCREEN,
+                        createdAt = System.currentTimeMillis(),
+                        pinConfirmed = true
+                    )
+                )
+                currentShortcutId = shortcutId
+                applyDisplayMode(true)
+                binding.webView.loadUrl(fallbackUrl)
+                Toast.makeText(this, "已自动修复这个快捷方式的本地记录。", Toast.LENGTH_SHORT).show()
+                return
+            }
+            Toast.makeText(this, "这个桌面快捷方式缺少本地记录，而且没带上网页地址，所以暂时无法打开。", Toast.LENGTH_LONG).show()
         }
 
         currentShortcutId = null
@@ -523,23 +547,24 @@ open class MainActivity : AppCompatActivity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(6), dp(10), dp(6), dp(10))
+            setPadding(dp(8), dp(12), dp(8), dp(12))
             setBackgroundResource(R.drawable.bg_card)
+            elevation = dp(1).toFloat()
             layoutParams = GridLayout.LayoutParams().apply {
                 this.width = width
                 this.height = ViewGroup.LayoutParams.WRAP_CONTENT
                 setMargins(0, 0, dp(8), dp(10))
             }
-            minimumHeight = dp(96)
+            minimumHeight = dp(104)
             setOnClickListener { openUrl(site.url) }
             setOnLongClickListener { showWebsiteMenu(site); true }
         }
         val icon = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
-            setPadding(dp(6), dp(6), dp(6), dp(6))
+            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+            setPadding(dp(7), dp(7), dp(7), dp(7))
             setBackgroundResource(R.drawable.bg_icon_tile)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setImageBitmap(loadStoredIcon(site.iconPath) ?: BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
+            setImageBitmap(loadStoredIcon(site.iconPath) ?: SiteIdentityHelper.createFallbackIcon(this@MainActivity, site.title, site.url))
         }
         card.addView(icon)
         card.addView(TextView(this).apply {
@@ -613,7 +638,7 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun showBrowserMenu() {
-        val items = arrayOf("主页", "前进", "刷新", "添加到桌面", "保存到网页库", "网页测试", "新建分类", "浏览器设置")
+        val items = arrayOf("主页", "前进", "刷新", "添加到桌面", "保存到首页", "添加网页", "新建分类", "浏览器设置")
         AlertDialog.Builder(this)
             .setTitle("网页菜单")
             .setItems(items) { _, which ->
@@ -640,7 +665,7 @@ open class MainActivity : AppCompatActivity() {
             .setTitle("保存到哪个分类？")
             .setSingleChoiceItems(categories, 0) { dialog, which ->
                 val title = lastPageTitle.ifBlank { Uri.parse(url).host.orEmpty().ifBlank { "网页" } }
-                val iconPath = saveWebsiteIcon("site_${System.currentTimeMillis()}", lastFavicon)
+                val iconPath = saveWebsiteIcon("site_${System.currentTimeMillis()}", lastFavicon ?: SiteIdentityHelper.createFallbackIcon(this, title, url))
                 database.upsertWebsite(
                     SavedWebsite(
                         title = title,
@@ -684,7 +709,9 @@ open class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "当前桌面启动器不支持固定快捷方式。", Toast.LENGTH_LONG).show(); return
         }
         val shortcutId = "site_${UUID.randomUUID()}"
-        val iconPath = storedIconPath ?: saveShortcutIcon(shortcutId, lastFavicon)
+        val iconPath = storedIconPath
+            ?: database.getWebsiteByUrl(url)?.iconPath
+            ?: saveShortcutIcon(shortcutId, lastFavicon ?: SiteIdentityHelper.createFallbackIcon(this, title, url))
         val shortcut = WebsiteShortcut(
             id = 0,
             shortcutId = shortcutId,
@@ -699,6 +726,23 @@ open class MainActivity : AppCompatActivity() {
         if (ShortcutManagerHelper.requestPin(this, shortcut)) {
             Toast.makeText(this, "请在系统弹窗中确认添加到主屏幕。", Toast.LENGTH_LONG).show()
         } else Toast.makeText(this, "无法请求添加桌面快捷方式。", Toast.LENGTH_LONG).show()
+    }
+
+    private fun resolveVisiblePageIdentity(view: WebView, url: String) {
+        SiteIdentityHelper.requestPageMeta(view, url) { meta ->
+            val resolvedTitle = meta.bestTitle.ifBlank { SiteIdentityHelper.cleanDisplayName(lastPageTitle, url) }
+            if (resolvedTitle.isNotBlank()) {
+                lastPageTitle = resolvedTitle
+                binding.pageTitle.text = resolvedTitle
+            }
+            if (lastFavicon == null) {
+                meta.iconUrl?.let { iconUrl ->
+                    SiteIdentityHelper.fetchBitmapAsync(iconUrl) { bitmap ->
+                        if (bitmap != null) lastFavicon = bitmap
+                    }
+                }
+            }
+        }
     }
 
     private fun saveShortcutIcon(shortcutId: String, bitmap: Bitmap?): String? {
