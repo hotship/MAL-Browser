@@ -26,7 +26,7 @@ import java.util.concurrent.Executors
  * Release contract:
  * - Latest GitHub Release must contain an APK asset.
  * - Latest GitHub Release must contain update.json with:
- *   {"versionCode":4,"versionName":"2.2.0","apkAsset":"MALBrowser-2.2.0.apk"}
+ *   {"versionCode":5,"versionName":"2.2.1","apkAsset":"MALBrowser-2.2.1.apk"}
  * - Release body is used as the changelog shown to the user.
  */
 object UpdateManager {

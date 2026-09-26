@@ -1,3 +1,12 @@
+MAL Browser V4.2 / 2.2.1 UI update (2026-09-26)
+
+- Browser page now keeps only one compact top control bar; the previous full bottom toolbar has been removed.
+- Back remains directly available; home/forward/refresh/add-to-desktop/save/test/settings are consolidated in the top-right menu.
+- Removed the home-page “添加网页更顺手了 / 测试台” promotional card.
+- Saved websites on the home page now use a 4-column grid.
+- Website cards show only icon + name; URL/domain text is no longer displayed.
+- Version bumped to versionCode 5 / versionName 2.2.1 for GitHub Release auto-update detection.
+
 MAL 浏览器 V3（2026-09-26）本次调整
 
 1. 首页改为更偏韩系、浅米白、轻盈卡片风。

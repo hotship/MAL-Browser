@@ -250,13 +250,7 @@ open class MainActivity : AppCompatActivity() {
             } else false
         }
         binding.backButton.setOnClickListener { if (binding.webView.canGoBack()) binding.webView.goBack() }
-        binding.forwardButton.setOnClickListener { if (binding.webView.canGoForward()) binding.webView.goForward() }
-        binding.refreshButton.setOnClickListener { binding.webView.reload() }
-        binding.pinButton.setOnClickListener { showAddShortcutDialog() }
-        binding.browserHomeButton.setOnClickListener { showHome() }
-        binding.navHomeButton.setOnClickListener { showHome() }
         binding.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
-        binding.testSiteButton.setOnClickListener { startActivity(Intent(this, SiteTestActivity::class.java)) }
         binding.addCategoryButton.setOnClickListener { showAddCategoryDialog() }
         binding.browserMenuButton.setOnClickListener { showBrowserMenu() }
     }
@@ -444,8 +438,6 @@ open class MainActivity : AppCompatActivity() {
         binding.browserScreen.visibility = View.VISIBLE
         val ui = if (shortcutMode) View.GONE else View.VISIBLE
         binding.browserHeader.visibility = ui
-        binding.bottomBar.visibility = ui
-        binding.bottomDivider.visibility = ui
     }
 
     private fun showBrowserUi() {
@@ -454,8 +446,6 @@ open class MainActivity : AppCompatActivity() {
         binding.homeScreen.visibility = View.GONE
         binding.browserScreen.visibility = View.VISIBLE
         binding.browserHeader.visibility = View.VISIBLE
-        binding.bottomBar.visibility = View.VISIBLE
-        binding.bottomDivider.visibility = View.VISIBLE
     }
 
     private fun showHome() {
@@ -522,31 +512,31 @@ open class MainActivity : AppCompatActivity() {
         binding.siteCountText.text = "${websites.size} 个网页"
         binding.emptyState.visibility = if (websites.isEmpty()) View.VISIBLE else View.GONE
         binding.websiteList.removeAllViews()
-        binding.websiteList.columnCount = 3
+        binding.websiteList.columnCount = 4
         websites.forEach { binding.websiteList.addView(createWebsiteCard(it)) }
     }
 
     private fun createWebsiteCard(site: SavedWebsite): View {
         val totalHorizontal = dp(18 * 2)
-        val gap = dp(10 * 2)
-        val width = ((resources.displayMetrics.widthPixels - totalHorizontal - gap) / 3f).toInt().coerceAtLeast(dp(96))
+        val totalGaps = dp(8 * 4)
+        val width = ((resources.displayMetrics.widthPixels - totalHorizontal - totalGaps) / 4f).toInt().coerceAtLeast(dp(68))
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(10), dp(12), dp(10), dp(12))
+            setPadding(dp(6), dp(10), dp(6), dp(10))
             setBackgroundResource(R.drawable.bg_card)
             layoutParams = GridLayout.LayoutParams().apply {
                 this.width = width
                 this.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                setMargins(0, 0, dp(10), dp(10))
+                setMargins(0, 0, dp(8), dp(10))
             }
-            minimumHeight = dp(132)
+            minimumHeight = dp(96)
             setOnClickListener { openUrl(site.url) }
             setOnLongClickListener { showWebsiteMenu(site); true }
         }
         val icon = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
-            setPadding(dp(7), dp(7), dp(7), dp(7))
+            layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
+            setPadding(dp(6), dp(6), dp(6), dp(6))
             setBackgroundResource(R.drawable.bg_icon_tile)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setImageBitmap(loadStoredIcon(site.iconPath) ?: BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
@@ -554,22 +544,13 @@ open class MainActivity : AppCompatActivity() {
         card.addView(icon)
         card.addView(TextView(this).apply {
             text = site.title
-            textSize = 14f
+            textSize = 12.5f
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.ink))
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(0, dp(10), 0, 0)
-        })
-        card.addView(TextView(this).apply {
-            text = (Uri.parse(site.url).host ?: site.url).removePrefix("www.")
-            textSize = 10.5f
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.muted))
-            gravity = Gravity.CENTER
-            maxLines = 2
-            ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(0, dp(4), 0, 0)
+            setPadding(0, dp(8), 0, 0)
         })
         return card
     }
@@ -632,15 +613,20 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun showBrowserMenu() {
-        val items = arrayOf("保存到网页库", "网页测试", "新建分类", "浏览器设置")
+        val items = arrayOf("主页", "前进", "刷新", "添加到桌面", "保存到网页库", "网页测试", "新建分类", "浏览器设置")
         AlertDialog.Builder(this)
-            .setTitle("MAL 网页菜单")
+            .setTitle("网页菜单")
             .setItems(items) { _, which ->
                 when (which) {
-                    0 -> saveCurrentPageToLibrary()
-                    1 -> startActivity(Intent(this, SiteTestActivity::class.java).putExtra(SiteTestActivity.EXTRA_URL, binding.webView.url))
-                    2 -> showAddCategoryDialog()
-                    3 -> startActivity(Intent(this, SettingsActivity::class.java))
+                    0 -> showHome()
+                    1 -> if (binding.webView.canGoForward()) binding.webView.goForward()
+                         else Toast.makeText(this, "没有可前进的页面。", Toast.LENGTH_SHORT).show()
+                    2 -> binding.webView.reload()
+                    3 -> showAddShortcutDialog()
+                    4 -> saveCurrentPageToLibrary()
+                    5 -> startActivity(Intent(this, SiteTestActivity::class.java).putExtra(SiteTestActivity.EXTRA_URL, binding.webView.url))
+                    6 -> showAddCategoryDialog()
+                    7 -> startActivity(Intent(this, SettingsActivity::class.java))
                 }
             }.show()
     }
@@ -860,9 +846,7 @@ open class MainActivity : AppCompatActivity() {
 
     private fun updateNavButtons() {
         binding.backButton.isEnabled = binding.webView.canGoBack()
-        binding.forwardButton.isEnabled = binding.webView.canGoForward()
         binding.backButton.alpha = if (binding.backButton.isEnabled) 1f else 0.35f
-        binding.forwardButton.alpha = if (binding.forwardButton.isEnabled) 1f else 0.35f
     }
 
     private fun applyUserAgentSetting() {
