@@ -9,3 +9,14 @@ MAL 浏览器 V3（2026-09-26）本次调整
 
 补充：
 - 之前给出的 .sha256 校验文件只是用来验证 ZIP 是否下载完整、文件有没有损坏；不是必须使用的安装文件。
+
+云端更新版（2.2.0 / versionCode 4）
+- 固定 applicationId：com.shixu.minibrowser，避免破坏现有 App/WebView 数据归属。
+- compileSdk/targetSdk 调整为 36，避开 GitHub runner API 37 问题。
+- 新增 GitHub Releases 自动更新模块。
+- 设置页新增“检查更新”。
+- 启动后每 12 小时静默检查一次；仅发现新版本时弹窗。
+- 新增 update.json + versionCode 可靠版本判断。
+- 新增 APK 下载、Android 8+ 未知来源安装权限处理和 FileProvider 安装。
+- build.gradle.kts 支持从 GitHub Secrets 注入正式 release 签名。
+- 增加签名文件 .gitignore 保护。

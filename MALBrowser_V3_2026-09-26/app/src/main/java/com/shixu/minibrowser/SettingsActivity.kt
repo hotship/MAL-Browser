@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.shixu.minibrowser.databinding.ActivitySettingsBinding
 import com.shixu.minibrowser.service.KeepAliveService
+import com.shixu.minibrowser.update.UpdateManager
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
@@ -49,6 +50,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.desktopModeSwitch.isChecked = BrowserPrefs.desktopMode(this)
         binding.webNotificationsSwitch.isChecked = BrowserPrefs.webNotifications(this)
         binding.keepAliveSwitch.isChecked = BrowserPrefs.keepAlive(this)
+        binding.currentVersionText.text = "当前版本 ${BuildConfig.VERSION_NAME} · versionCode ${BuildConfig.VERSION_CODE}"
     }
 
     private fun bindActions() {
@@ -90,6 +92,18 @@ class SettingsActivity : AppCompatActivity() {
                 runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
             }
         }
+        binding.checkUpdateButton.setOnClickListener {
+            binding.checkUpdateButton.isEnabled = false
+            UpdateManager.checkAndPrompt(this, manual = true) { message ->
+                binding.updateStatusText.text = message
+                binding.checkUpdateButton.isEnabled = true
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        UpdateManager.resumePendingWork(this)
     }
 
     private fun requestNotificationPermissionIfNeeded() {

@@ -51,6 +51,7 @@ import com.shixu.minibrowser.data.WebsiteShortcut
 import com.shixu.minibrowser.databinding.ActivityMainBinding
 import com.shixu.minibrowser.service.KeepAliveService
 import com.shixu.minibrowser.shortcut.ShortcutManagerHelper
+import com.shixu.minibrowser.update.UpdateManager
 import com.shixu.minibrowser.web.NativeWebBridge
 import com.shixu.minibrowser.web.UrlTools
 import org.json.JSONObject
@@ -150,6 +151,11 @@ open class MainActivity : AppCompatActivity() {
 
         if (intent.action != ShortcutManagerHelper.ACTION_OPEN_SHORTCUT) {
             binding.root.post { checkForMissingPinnedShortcut() }
+            binding.root.postDelayed({
+                if (UpdateManager.shouldAutoCheck(this)) {
+                    UpdateManager.checkAndPrompt(this, manual = false)
+                }
+            }, 1200L)
         }
     }
 
@@ -171,6 +177,7 @@ open class MainActivity : AppCompatActivity() {
         super.onResume()
         applyUserAgentSetting()
         refreshHome()
+        UpdateManager.resumePendingWork(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

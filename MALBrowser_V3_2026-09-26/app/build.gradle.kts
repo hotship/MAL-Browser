@@ -2,19 +2,44 @@ plugins {
     id("com.android.application")
 }
 
+val malKeystoreFile = System.getenv("MAL_KEYSTORE_FILE")
+val malKeystorePassword = System.getenv("MAL_KEYSTORE_PASSWORD")
+val malKeyAlias = System.getenv("MAL_KEY_ALIAS")
+val malKeyPassword = System.getenv("MAL_KEY_PASSWORD")
+val malReleaseSigningReady = listOf(
+    malKeystoreFile,
+    malKeystorePassword,
+    malKeyAlias,
+    malKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.shixu.minibrowser"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
-        // IMPORTANT: Do not change this after release if you want upgrades to keep app/WebView data.
+        // IMPORTANT: Keep this applicationId forever if you want Android updates to retain app/WebView data.
         applicationId = "com.shixu.minibrowser"
         minSdk = 29
-        targetSdk = 37
-        versionCode = 3
-        versionName = "2.1.0"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "2.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Public GitHub repository used by the in-app updater.
+        buildConfigField("String", "UPDATE_REPOSITORY", "\"hotship/MAL-Browser\"")
+    }
+
+    if (malReleaseSigningReady) {
+        signingConfigs {
+            create("malRelease") {
+                storeFile = file(malKeystoreFile!!)
+                storePassword = malKeystorePassword
+                keyAlias = malKeyAlias
+                keyPassword = malKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -24,6 +49,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (malReleaseSigningReady) {
+                signingConfig = signingConfigs.getByName("malRelease")
+            }
         }
     }
 
@@ -31,7 +59,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
 
     buildFeatures {
         buildConfig = true
