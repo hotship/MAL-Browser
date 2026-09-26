@@ -28,15 +28,25 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Install Android SDK 36
-        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+        shell: bash
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Set up Gradle 9.6.1
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.6.1'
+      - name: Install Gradle 9.6.1 directly
+        shell: bash
+        run: |
+          rm -rf "$HOME/gradle-9.6.1" /tmp/gradle-9.6.1-bin.zip
+          curl -fL --retry 3 --retry-delay 2 \
+            https://services.gradle.org/distributions/gradle-9.6.1-bin.zip \
+            -o /tmp/gradle-9.6.1-bin.zip
+          unzip -q /tmp/gradle-9.6.1-bin.zip -d "$HOME"
+          chmod +x "$HOME/gradle-9.6.1/bin/gradle"
+          "$HOME/gradle-9.6.1/bin/gradle" --version
 
       - name: Build MAL APK
-        run: gradle --no-daemon assembleDebug --stacktrace
+        shell: bash
+        run: |
+          "$HOME/gradle-9.6.1/bin/gradle" --no-daemon assembleDebug --stacktrace
 
       - name: Upload MAL APK
         uses: actions/upload-artifact@v4
