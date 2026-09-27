@@ -12,13 +12,21 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: MALBrowser_V3_2026-09-26
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Locate Android project
+        id: project
+        shell: bash
+        run: |
+          SETTINGS=$(find . -maxdepth 4 -type f -name settings.gradle.kts -not -path './.gradle/*' | head -n 1)
+          test -n "$SETTINGS" || { echo "settings.gradle.kts not found"; exit 1; }
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          PROJECT_DIR=${PROJECT_DIR#./}
+          [ -n "$PROJECT_DIR" ] || PROJECT_DIR=.
+          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          echo "Android project: $PROJECT_DIR"
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -55,6 +63,7 @@ jobs:
 
       - name: Build signed release APK
         shell: bash
+        working-directory: ${{ steps.project.outputs.dir }}
         env:
           MAL_KEYSTORE_FILE: ${{ runner.temp }}/mal-release.jks
           MAL_KEYSTORE_PASSWORD: ${{ secrets.MAL_KEYSTORE_PASSWORD }}
@@ -68,14 +77,16 @@ jobs:
 
       - name: Verify APK signature
         shell: bash
+        working-directory: ${{ steps.project.outputs.dir }}
         run: |
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
 
-      - name: Prepare release files
+      - name: Prepare release files and update metadata
         id: version
         shell: bash
+        working-directory: ${{ steps.project.outputs.dir }}
         run: |
           VERSION_CODE=$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\).*/\1/p' app/build.gradle.kts | head -n1)
           VERSION_NAME=$(sed -n 's/^[[:space:]]*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n1)
@@ -92,10 +103,13 @@ jobs:
           python3 - <<PY
           import json
           from pathlib import Path
+          notes_path = Path("UPDATE_NOTES.txt")
+          notes = notes_path.read_text(encoding="utf-8").strip() if notes_path.exists() else "本次版本包含稳定性与体验更新。"
           Path("dist/update.json").write_text(json.dumps({
               "versionCode": int("$VERSION_CODE"),
               "versionName": "$VERSION_NAME",
-              "apkAsset": "$APK_NAME"
+              "apkAsset": "$APK_NAME",
+              "changelog": notes
           }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
 
@@ -109,31 +123,37 @@ jobs:
         with:
           name: MALBrowser-${{ steps.version.outputs.version_name }}-signed
           path: |
-            MALBrowser_V3_2026-09-26/dist/${{ steps.version.outputs.apk_name }}
-            MALBrowser_V3_2026-09-26/dist/${{ steps.version.outputs.apk_name }}.sha256
-            MALBrowser_V3_2026-09-26/dist/update.json
+            ${{ steps.project.outputs.dir }}/dist/${{ steps.version.outputs.apk_name }}
+            ${{ steps.project.outputs.dir }}/dist/${{ steps.version.outputs.apk_name }}.sha256
+            ${{ steps.project.outputs.dir }}/dist/update.json
           if-no-files-found: error
           retention-days: 30
 
       - name: Create or update GitHub Release
         shell: bash
+        working-directory: ${{ steps.project.outputs.dir }}
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
           VERSION_NAME: ${{ steps.version.outputs.version_name }}
           APK_NAME: ${{ steps.version.outputs.apk_name }}
         run: |
+          NOTES_FILE="UPDATE_NOTES.txt"
+          if [ ! -s "$NOTES_FILE" ]; then
+            printf '%s\n' '本次版本包含稳定性与体验更新。' > "$NOTES_FILE"
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" \
               "dist/$APK_NAME" \
               "dist/$APK_NAME.sha256" \
               "dist/update.json" \
               --clobber
+            gh release edit "$TAG" --title "MAL 浏览器 $VERSION_NAME" --notes-file "$NOTES_FILE"
           else
             gh release create "$TAG" \
               "dist/$APK_NAME" \
               "dist/$APK_NAME.sha256" \
               "dist/update.json" \
               --title "MAL 浏览器 $VERSION_NAME" \
-              --generate-notes
+              --notes-file "$NOTES_FILE"
           fi
