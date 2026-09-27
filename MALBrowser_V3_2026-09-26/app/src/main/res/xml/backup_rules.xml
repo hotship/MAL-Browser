@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<full-backup-content>
-    <include domain="database" path="." />
-    <include domain="file" path="shortcut_icons/" />
-    <include domain="file" path="website_icons/" />
-    <include domain="sharedpref" path="." />
-</full-backup-content>
