@@ -1,0 +1,15 @@
+MAL Browser V8 / 2.8.0 静态验收记录
+
+[PASS] versionCode 11 / versionName 2.8.0
+[PASS] 工程根目录 settings.gradle.kts / build.gradle.kts / gradlew / gradle wrapper 齐全
+[PASS] 可见 WebView 统一使用宽视口 + 首屏 overview + textZoom 100 + NORMAL layout
+[PASS] 移除移动 UA 中 Android WebView 的 ; wv / Version/4.0 特征，保留桌面模式切换
+[PASS] 关闭 WebView 算法暗化，降低网页颜色被宿主 App 改写的概率
+[PASS] 网页名称支持 application-name / apple title / OG / Twitter / H1 / PWA manifest
+[PASS] Netlify / Vercel / Pages / GitHub Pages 支持项目子域名回退
+[PASS] 图标支持多 favicon 候选、尺寸排序、PWA manifest icons、常见根路径兜底
+[PASS] SVG favicon 使用 WebView canvas 转 PNG，覆盖 Vite / Netlify 常见 favicon.svg
+[PASS] 不再因为 WebChromeClient 先返回低清 favicon 就停止后续高清识别
+[PASS] SiteIdentityHelper + WebViewCompatibility 已通过 Kotlin 语法/类型桩检查
+
+说明：当前运行环境未提供 Android SDK/Gradle 依赖缓存，因此未在本地执行完整 assembleRelease；GitHub Actions 上传完整工程后可执行正式 Android 构建。

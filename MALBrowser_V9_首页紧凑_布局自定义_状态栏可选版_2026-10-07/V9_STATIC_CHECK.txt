@@ -1,0 +1,9 @@
+MAL Browser V9 / 2.9.0 static changes
+
+1. Home website tiles: launcher-style icon + title, no outer card background/elevation.
+2. Home vertical layout compressed: smaller hero, add form, categories and bottom navigation.
+3. New preference show_status_bar_in_shortcut: optional status bar for pinned web sessions; perfect fullscreen remains available.
+4. New preference home_columns: supports 3/4/5/6 columns and adaptive icon/text sizing.
+5. Settings page includes status-bar switch, home-column selector, detailed feature guide and changelog.
+6. InfoActivity added and declared in AndroidManifest.
+7. versionName 2.9.0, versionCode 12.

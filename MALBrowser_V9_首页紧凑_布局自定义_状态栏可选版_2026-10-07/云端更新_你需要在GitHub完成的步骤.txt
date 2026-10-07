@@ -1,0 +1,74 @@
+MAL 浏览器云端更新 —— 你只需要在 GitHub 做这些
+================================================
+
+一、不要改包名
+当前正式固定包名：com.shixu.minibrowser
+后续如果想正常覆盖更新并保留 App/WebView 数据，不要再修改 applicationId。
+
+二、保存正式签名
+聊天附件里会另外给你：
+- mal-release.jks
+- MAL_签名凭据_务必长期保存.txt
+- MAL_KEYSTORE_BASE64.txt
+
+这三个文件不要上传公开 GitHub。建议至少离线备份两份。
+
+三、GitHub 建 4 个 Actions Secrets
+仓库 hotship/MAL-Browser：
+Settings → Secrets and variables → Actions → New repository secret
+
+依次创建：
+MAL_KEYSTORE_BASE64
+MAL_KEYSTORE_PASSWORD
+MAL_KEY_ALIAS
+MAL_KEY_PASSWORD
+
+具体值全部写在“签名凭据”文件里。
+
+四、替换 GitHub Actions
+此项目包内有文件：GITHUB_android-release.yml
+
+把它的内容放到“仓库最外层”的：
+.github/workflows/android.yml
+
+注意：workflow 必须放在整个 GitHub 仓库根目录的 .github/workflows/。新版模板会自动寻找 settings.gradle.kts，不再写死项目文件夹名称。
+
+这份 workflow 已按当前项目情况设计：
+- Android API 36
+- Java 17
+- 直接下载官方 Gradle 9.6.1
+- 不使用 gradle/actions/setup-gradle@v4
+- 不依赖项目 gradle-wrapper.jar
+- 构建 signed release APK
+- 验证 APK 签名
+- 自动生成 update.json
+- 自动创建 GitHub Release
+- 自动上传 APK + SHA256 + update.json
+
+五、以后每次发新版
+先改 app/build.gradle.kts：
+versionCode 必须 +1
+versionName 改成你要显示的版本号
+
+例如：
+2.2.0 / 4
+2.2.1 / 5
+2.3.0 / 6
+
+发布前还可以编辑项目根目录 UPDATE_NOTES.txt，写本次更新内容。
+然后提交 GitHub。Actions 会自动构建、把 UPDATE_NOTES.txt 写进 update.json，并同步作为 GitHub Release 更新说明。
+
+六、App 内更新规则
+MAL 会读取：
+https://api.github.com/repos/hotship/MAL-Browser/releases/latest
+
+再读取 Release 里的 update.json，用 versionCode 判断是否有新版。
+MAL 2.6 会在打开或重新回到 App 时自动检查（正常约每小时最多一次，失败后约 10 分钟可重试），用户不需要手动进入设置检查。
+检测到新版后：
+自动弹窗显示 UPDATE_NOTES.txt 对应的更新内容 → 下载 APK → Android 8+ 如未授权先去“允许此来源安装应用” → 返回 MAL 自动继续 → 打开系统安装器。
+
+七、第一版正式签名特别注意
+你此前 GitHub Actions 的 debug APK 如果使用的是临时 runner debug 签名，它和这把正式签名不同。
+Android 不允许不同签名直接覆盖安装。
+因此第一次从 debug 切换到正式签名版，通常需要卸载旧 debug 版再安装一次。
+从正式版开始，只要永远使用同一把 mal-release.jks，之后更新就可以直接覆盖，正常不会清掉 Cookie、LocalStorage、IndexedDB 和 MAL 本地数据。
