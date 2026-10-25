@@ -1,0 +1,12 @@
+MAL Browser V9 / 2.9.1 static changes
+
+1. Home website tiles: launcher-style icon + title, no outer card background/elevation.
+2. Home vertical layout compressed: smaller hero, add form, categories and bottom navigation.
+3. New preference show_status_bar_in_shortcut: optional status bar for pinned web sessions; perfect fullscreen remains available.
+4. New preference home_columns: supports 3/4/5/6 columns and adaptive icon/text sizing.
+5. Settings page includes status-bar switch, home-column selector, detailed feature guide and changelog.
+6. InfoActivity added and declared in AndroidManifest.
+7. versionName 2.9.1, versionCode 13.
+8. MainActivity and ShortcutActivity declare adjustResize; MainActivity tracks IME insets while preserving existing system-bar/fullscreen behavior.
+9. NativeWebBridge keeps Blob objects associated with blob: URLs through immediate revokeObjectURL calls, avoiding fetch(blob:) race failures during exports.
+10. Focused text inputs, textareas, selects and contenteditable elements are rechecked after keyboard/visualViewport resize and scrolled into view when obscured.
